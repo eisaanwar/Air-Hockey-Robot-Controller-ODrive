@@ -1,0 +1,89 @@
+from __future__ import print_function
+
+import odrive
+from odrive.enums import *
+import time
+import math
+
+currentLimit = 100 #(amps) max current per motor
+encoderCPR = 4000 # counts per revolution of the encoder
+
+# counts are encoder values. 4000 is 1 motor revolution
+# configurations for the tragectory control
+acceleration = 1250000/2 # (counts/seconds^2) for the trajectory control
+deceleration = 1250000/2 # (counts/seconds^2) for the trajectory control
+speed = 600000/2
+
+
+print("finding an odrive...")
+my_drive = odrive.find_any() # find ODrive Controller Board
+
+#Configure Motors and Encoders
+#odrv0.axis0.motor.config.requested_current_range = 120
+#odrv0.axis0.motor.config.requested_current_range = 120
+
+
+my_drive.axis0.motor.config.current_lim = currentLimit # current limit
+my_drive.axis1.motor.config.current_lim = currentLimit
+
+my_drive.axis0.encoder.config.cpr = encoderCPR # encoder counts
+my_drive.axis1.encoder.config.cpr = encoderCPR
+
+my_drive.axis0.controller.config.vel_limit = speed*1.2 # set speeds
+my_drive.axis1.controller.config.vel_limit = speed*1.2
+
+my_drive.axis0.trap_traj.config.vel_limit = speed # set tragector control speeds
+my_drive.axis1.trap_traj.config.vel_limit = speed
+
+my_drive.axis0.trap_traj.config.accel_limit = acceleration # acceleration limit
+my_drive.axis1.trap_traj.config.accel_limit = acceleration
+
+my_drive.axis0.trap_traj.config.decel_limit = acceleration # deceleration limit
+my_drive.axis1.trap_traj.config.decel_limit = acceleration
+
+
+print("Board Voltage: " + str(my_drive.vbus_voltage) + "V") # Check Voltage
+
+# Calibrate motor and wait for it to finish
+print("starting calibration...for both motors")
+my_drive.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
+my_drive.axis1.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
+while (my_drive.axis0.current_state != AXIS_STATE_IDLE) or (my_drive.axis1.current_state != AXIS_STATE_IDLE) :
+    time.sleep(0.1)
+
+my_drive.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+my_drive.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+
+
+#while True:
+for i in range(15):
+    my_drive.axis0.controller.move_to_pos(0)
+    my_drive.axis1.controller.move_to_pos(0)
+    #time.sleep(0.5)
+    for i in range(5):
+        time.sleep(0.1)
+
+
+    my_drive.axis0.controller.move_to_pos(16000)
+    my_drive.axis1.controller.move_to_pos(0)
+    #time.sleep(0.5)
+    for i in range(5):
+        time.sleep(0.1)
+
+    my_drive.axis0.controller.move_to_pos(16000)
+    my_drive.axis1.controller.move_to_pos(16000)
+    #time.sleep(0.5)
+    for i in range(5):
+        time.sleep(0.1)
+
+    my_drive.axis0.controller.move_to_pos(8000)
+    my_drive.axis1.controller.move_to_pos(8000)
+    #time.sleep(0.5)
+    for i in range(5):
+        time.sleep(0.1)
+
+    my_drive.axis0.controller.move_to_pos(16000)
+    my_drive.axis1.controller.move_to_pos(16000)
+    #time.sleep(0.5)
+    for i in range(5):
+        time.sleep(0.1)
